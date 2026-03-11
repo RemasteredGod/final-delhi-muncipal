@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎤 Real-Time Voice Test - Delhi Municipal Corp AI</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        width: 100%;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+      }
+
+      h1 {
+        text-align: center;
+        color: #667eea;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+      }
+
+      .status-bar {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+      }
+
+      .status-item {
+        text-align: center;
+      }
+
+      .status-label {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .status-indicator {
+        font-size: 1.5em;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      button {
+        padding: 15px 30px;
+        font-size: 1.1em;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+
+      .record-btn {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+      }
+
+      .record-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+      }
+
+      .record-btn.recording {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .stop-btn {
+        background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+        color: white;
+      }
+
+      .stop-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .result-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        min-height: 100px;
+      }
+
+      .result-title {
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 10px;
+        font-size: 1.1em;
+      }
+
+      .result-content {
+        color: #333;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+
+      .loading {
+        text-align: center;
+        color: #667eea;
+        font-style: italic;
+      }
+
+      .error {
+        background: #fee;
+        border-left: 4px solid #f00;
+        padding: 15px;
+        border-radius: 5px;
+        color: #c00;
+        margin-bottom: 20px;
+      }
+
+      .success {
+        background: #efe;
+        border-left: 4px solid #0f0;
+        padding: 15px;
+        border-radius: 5px;
+        color: #060;
+        margin-bottom: 20px;
+      }
+
+      .audio-visualizer {
+        width: 100%;
+        height: 100px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .bars {
+        display: flex;
+        gap: 4px;
+        height: 80px;
+        align-items: flex-end;
+      }
+
+      .bar {
+        width: 4px;
+        background: linear-gradient(to top, #667eea, #764ba2);
+        border-radius: 2px;
+        transition: height 0.1s ease;
+      }
+
+      .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+
+      .info-box strong {
+        color: #1976d2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div style="margin-bottom: 20px">
+        <a
+          href="/dashboard/"
+          style="
+            display: inline-block;
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: background 0.2s;
+          "
+          onmouseover="this.style.background = '#5a6268'"
+          onmouseout="this.style.background = '#6c757d'"
+        >
+          ← Back to Dashboard
+        </a>
+      </div>
+      <h1>🎤 Real-Time Voice Test</h1>
+      <p class="subtitle">Delhi Municipal Corporation AI Assistant</p>
+
+      <div class="status-bar">
+        <div class="status-item">
+          <div class="status-label">Microphone</div>
+          <div class="status-indicator" id="mic-status">⚪</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Whisper STT</div>
+          <div class="status-indicator" id="stt-status">⚪</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Mistral AI</div>
+          <div class="status-indicator" id="ai-status">⚪</div>
+        </div>
+      </div>
+
+      <div id="error-message"></div>
+      <div id="success-message"></div>
+
+      <div class="audio-visualizer" id="visualizer" style="display: none">
+        <div class="bars" id="bars"></div>
+      </div>
+
+      <div class="controls">
+        <button class="record-btn" id="record-btn" onclick="startRecording()">
+          🎤 Start Recording
+        </button>
+        <button
+          class="stop-btn"
+          id="stop-btn"
+          onclick="stopRecording()"
+          disabled
+        >
+          ⏹️ Stop
+        </button>
+      </div>
+
+      <div class="result-box">
+        <div class="result-title">🗣️ Your Speech (Transcribed):</div>
+        <div class="result-content" id="transcription">
+          Click "Start Recording" and speak...
+        </div>
+      </div>
+
+      <div class="result-box">
+        <div class="result-title">🤖 AI Response:</div>
+        <div class="result-content" id="ai-response">
+          AI will respond here...
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>💡 How to use:</strong><br />
+        1. Click "Start Recording" and allow microphone access<br />
+        2. Speak your question clearly (e.g., "How do I pay property tax?")<br />
+        3. Click "Stop" when done<br />
+        4. Watch your speech get transcribed and AI responds!
+      </div>
+    </div>
+
+    <script>
+      let mediaRecorder;
+      let audioChunks = [];
+      let audioContext;
+      let analyser;
+      let microphone;
+      let barInterval;
+
+      // Check services on load
+      window.addEventListener('DOMContentLoaded', () => {
+        checkServices();
+      });
+
+      async function checkServices() {
+        // Check Whisper STT
+        try {
+          const sttResponse = await fetch('http://localhost:5001/');
+          const sttData = await sttResponse.json();
+          document.getElementById('stt-status').textContent = '✅';
+        } catch (error) {
+          document.getElementById('stt-status').textContent = '❌';
+          showError('Whisper STT service not running on port 5001');
+        }
+
+        // Check Mistral AI
+        try {
+          const aiResponse = await fetch('http://localhost:11434/');
+          document.getElementById('ai-status').textContent = '✅';
+        } catch (error) {
+          document.getElementById('ai-status').textContent = '❌';
+          showError('Mistral AI (Ollama) not running on port 11434');
+        }
+      }
+
+      async function startRecording() {
+        try {
+          // Request microphone access
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+
+          document.getElementById('mic-status').textContent = '✅';
+          document.getElementById('record-btn').classList.add('recording');
+          document.getElementById('record-btn').disabled = true;
+          document.getElementById('stop-btn').disabled = false;
+          document.getElementById('visualizer').style.display = 'flex';
+
+          clearMessages();
+          document.getElementById('transcription').textContent = 'Listening...';
+          document.getElementById('ai-response').textContent =
+            'Waiting for your speech...';
+
+          // Initialize audio visualizer
+          audioContext = new AudioContext();
+          analyser = audioContext.createAnalyser();
+          microphone = audioContext.createMediaStreamSource(stream);
+          microphone.connect(analyser);
+          analyser.fftSize = 256;
+
+          createBars();
+          visualize();
+
+          // Start recording
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            await processAudio(audioBlob);
+          };
+
+          mediaRecorder.start();
+          showSuccess('Recording started! Speak now...');
+        } catch (error) {
+          showError('Microphone access denied: ' + error.message);
+          document.getElementById('mic-status').textContent = '❌';
+        }
+      }
+
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+          mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+
+          document.getElementById('record-btn').classList.remove('recording');
+          document.getElementById('record-btn').disabled = false;
+          document.getElementById('stop-btn').disabled = true;
+          document.getElementById('visualizer').style.display = 'none';
+
+          if (audioContext) {
+            audioContext.close();
+          }
+
+          clearInterval(barInterval);
+          showSuccess('Processing your speech...');
+        }
+      }
+
+      async function processAudio(audioBlob) {
+        try {
+          // Step 1: Transcribe with Whisper
+          document.getElementById('transcription').innerHTML =
+            '<div class="loading">🔄 Transcribing with Whisper STT...</div>';
+
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.wav');
+
+          // Send audio to API upload endpoint
+          const uploadResponse = await fetch(
+            'http://localhost:8000/upload-audio',
+            {
+              method: 'POST',
+              body: formData,
+            },
+          );
+
+          const uploadResult = await uploadResponse.json();
+
+          if (uploadResult.success) {
+            const transcription = uploadResult.transcription;
+            document.getElementById('transcription').textContent =
+              transcription || 'No speech detected';
+            showSuccess('✅ Transcription complete!');
+
+            // Step 2: Get AI response
+            if (transcription) {
+              await getAIResponse(transcription);
+            } else {
+              showError('No speech detected. Please try again.');
+            }
+          } else {
+            showError(
+              'Transcription failed: ' +
+                (uploadResult.error || 'Unknown error'),
+            );
+            document.getElementById('transcription').textContent =
+              'Transcription failed';
+          }
+        } catch (error) {
+          showError('Processing failed: ' + error.message);
+          document.getElementById('transcription').textContent =
+            'Error processing audio';
+        }
+      }
+
+      async function getAIResponse(text) {
+        try {
+          document.getElementById('ai-response').innerHTML =
+            '<div class="loading">🤖 AI is thinking...</div>';
+
+          const response = await fetch('http://localhost:11434/api/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gemma2:2b',
+              prompt: `You are a helpful AI assistant for Delhi Municipal Corporation. Answer citizen queries professionally and concisely.
+
+For property tax questions, explain:
+- Visit the official MCD website or mobile app
+- Use your property ID to log in
+- Pay online via credit/debit card, net banking, or UPI
+- Or visit the nearest MCD office with property documents
+
+Keep answers short (2-3 sentences) and practical.
+
+Citizen: ${text}
+Assistant:`,
+              stream: false,
+            }),
+          });
+
+          const data = await response.json();
+          document.getElementById('ai-response').textContent =
+            data.response || 'No response from AI';
+          showSuccess('✅ Complete! AI responded successfully.');
+        } catch (error) {
+          showError('AI response failed: ' + error.message);
+          document.getElementById('ai-response').textContent =
+            'Error: Could not get AI response. Make sure Mistral model is loaded in Ollama.';
+        }
+      }
+
+      function createBars() {
+        const barsContainer = document.getElementById('bars');
+        barsContainer.innerHTML = '';
+        for (let i = 0; i < 30; i++) {
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+          bar.style.height = '10px';
+          barsContainer.appendChild(bar);
+        }
+      }
+
+      function visualize() {
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const bars = document.querySelectorAll('.bar');
+
+        barInterval = setInterval(() => {
+          analyser.getByteFrequencyData(dataArray);
+
+          bars.forEach((bar, i) => {
+            const index = Math.floor(i * (bufferLength / bars.length));
+            const value = dataArray[index];
+            const height = (value / 255) * 80;
+            bar.style.height = Math.max(height, 5) + 'px';
+          });
+        }, 50);
+      }
+
+      function showError(message) {
+        document.getElementById('error-message').innerHTML =
+          `<div class="error">❌ ${message}</div>`;
+        setTimeout(() => {
+          document.getElementById('error-message').innerHTML = '';
+        }, 5000);
+      }
+
+      function showSuccess(message) {
+        document.getElementById('success-message').innerHTML =
+          `<div class="success">✅ ${message}</div>`;
+        setTimeout(() => {
+          document.getElementById('success-message').innerHTML = '';
+        }, 3000);
+      }
+
+      function clearMessages() {
+        document.getElementById('error-message').innerHTML = '';
+        document.getElementById('success-message').innerHTML = '';
+      }
+    </script>
+  </body>
+</html>

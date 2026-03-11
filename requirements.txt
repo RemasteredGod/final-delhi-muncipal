@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+requests
+httpx
+redis
+twilio
+python-dotenv
+python-multipart
+aiofiles
+faster-whisper
+groq

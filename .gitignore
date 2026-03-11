@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+*.egg-info/
+
+# Node
+node_modules/
+frontend-react/build/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Redis dump
+dump.rdb

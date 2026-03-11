@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+faster-whisper
+requests
+numpy
+python-dotenv

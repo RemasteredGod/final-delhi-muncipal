@@ -4,3 +4,4 @@ faster-whisper
 requests
 numpy
 python-dotenv
+python-multipart

@@ -47,13 +47,18 @@ if os.path.exists(frontend_path):
 else:
     print(f"❌ WARNING: Frontend path not found at {frontend_path}")
 
-# Simplified Redis connection for local environment
-redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+# Configuration from environment
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+WHISPER_URL = os.getenv("WHISPER_URL", "http://localhost:5001")
+
+# Simplified Redis connection
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 try:
     redis_client.ping()
-    print("✅ Connected to Redis (localhost)")
+    print(f"✅ Connected to Redis ({REDIS_HOST}:{REDIS_PORT})")
 except:
-    print("❌ WARNING: Redis connection failed! (Make sure Redis is running)")
+    print(f"❌ WARNING: Redis connection failed! (Make sure Redis is running at {REDIS_HOST}:{REDIS_PORT})")
 
 # Initialize Twilio client for outbound calls
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
@@ -72,7 +77,7 @@ else:
 async def startup_check():
     """Startup check to ensure downstream services are reachable."""
     services = {
-        "Whisper": "http://localhost:5001/"
+        "Whisper": WHISPER_URL + "/"
     }
     
     async def check_service(name, url):
@@ -117,7 +122,7 @@ async def upload_audio(audio: UploadFile = File(...)):
                 with open(temp_path, 'rb') as f:
                     files = {'audio_file': ('audio.wav', f, 'audio/wav')}
                     stt_response = await client.post(
-                        "http://localhost:5001/transcribe-file",
+                        f"{WHISPER_URL}/transcribe-file",
                         files=files,
                         timeout=httpx.Timeout(30.0)
                     )
@@ -146,7 +151,7 @@ async def process(audio_url: str):
     async with httpx.AsyncClient() as client:
         # Step 1 – Speech to Text
         stt = await client.post(
-            "http://localhost:5001/transcribe",
+            f"{WHISPER_URL}/transcribe",
             json={"audio_url": audio_url}
         )
         text = stt.json()["text"]
@@ -224,7 +229,7 @@ async def handle_recording(
         try:
             async with httpx.AsyncClient() as client:
                 stt = await client.post(
-                    "http://localhost:5001/transcribe",
+                    f"{WHISPER_URL}/transcribe",
                     json={"audio_url": audio_url},
                     timeout=httpx.Timeout(10.0)
                 )

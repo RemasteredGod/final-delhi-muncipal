@@ -101,8 +101,13 @@ async def startup_check():
 
 
 @app.get("/")
-async def health():
+async def root():
     return {"status": "AI Calling Agent is running"}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "AI Calling Agent"}
 
 
 @app.post("/upload-audio")
@@ -442,3 +447,4 @@ async def initiate_call(request: Request):
         if "Unable to create record" in error_msg:
             error_msg = "Twilio error: You need a public URL. Set up ngrok: 'ngrok http 8000' and set BASE_URL environment variable."
         raise HTTPException(status_code=500, detail=error_msg)
+

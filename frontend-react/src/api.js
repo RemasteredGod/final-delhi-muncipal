@@ -2,7 +2,7 @@ const API_BASE = window.location.origin;
 
 export const checkHealth = async () => {
   try {
-    const response = await fetch(`${API_BASE}/`);
+    const response = await fetch(`${API_BASE}/health`);
     return response.ok ? await response.json() : null;
   } catch (error) {
     console.error('API Health check failed:', error);

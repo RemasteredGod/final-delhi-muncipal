@@ -10,15 +10,15 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements from whisper directory
-COPY whisper/requirements.txt .
+# Copy requirements
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Pre-download Whisper model to reduce startup time
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')"
 
-# Copy whisper application code
-COPY whisper/ .
+# Copy application code
+COPY . .
 
 # Expose port
 EXPOSE 5001

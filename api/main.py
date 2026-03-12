@@ -192,9 +192,13 @@ async def twilio_incoming(request: Request):
     Twilio webhook for inbound calls.
     Greets caller and starts recording.
     """
+    base_url = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
     form = await request.form()
     call_sid = form.get("CallSid", "unknown")
-    redis_client.set(f"timestamp:{call_sid}", datetime.utcnow().isoformat())
+    try:
+        redis_client.set(f"timestamp:{call_sid}", datetime.utcnow().isoformat())
+    except Exception as redis_err:
+        print(f"Redis write error in /twilio/incoming: {redis_err}")
 
     response = VoiceResponse()
     response.say(
@@ -206,7 +210,7 @@ async def twilio_incoming(request: Request):
         max_length=15,
         timeout=2,
         finish_on_key="#",
-        action="/twilio/handle-recording",
+        action=f"{base_url}/twilio/handle-recording",
         method="POST",
         play_beep=True
     )
@@ -222,8 +226,12 @@ async def handle_recording(
     Twilio sends the recording URL here after the caller speaks.
     Processes the audio and responds via TwiML.
     """
+    base_url = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
     # Refresh activity timestamp
-    redis_client.set(f"timestamp:{CallSid}", datetime.utcnow().isoformat())
+    try:
+        redis_client.set(f"timestamp:{CallSid}", datetime.utcnow().isoformat())
+    except Exception as redis_err:
+        print(f"Redis write error in /twilio/handle-recording: {redis_err}")
     twiml = VoiceResponse()
     
     try:
@@ -241,13 +249,16 @@ async def handle_recording(
             text = stt.json().get("text", "")
             
             if not text or text.strip() == "":
-                redis_client.rpush(f"call:{CallSid}", "User: [No speech detected]")
+                try:
+                    redis_client.rpush(f"call:{CallSid}", "User: [No speech detected]")
+                except Exception:
+                    pass
                 twiml.say("I did not hear anything. Please speak your query after the beep.", voice="alice")
                 twiml.record(
                     max_length=15,
                     timeout=2,
                     finish_on_key="#",
-                    action="/twilio/handle-recording",
+                    action=f"{base_url}/twilio/handle-recording",
                     method="POST",
                     play_beep=True
                 )
@@ -265,7 +276,10 @@ async def handle_recording(
             return Response(content=str(twiml), media_type="application/xml")
 
         # Store user speech in Redis
-        redis_client.rpush(f"call:{CallSid}", f"User: {text}")
+        try:
+            redis_client.rpush(f"call:{CallSid}", f"User: {text}")
+        except Exception:
+            pass
 
         # Step 2 – LLM Conversation Generation
         try:
@@ -300,7 +314,10 @@ async def handle_recording(
             response_text = "I am experiencing technical difficulties. Please call back later."
 
         # Store AI reply in Redis
-        redis_client.rpush(f"call:{CallSid}", f"AI: {response_text}")
+        try:
+            redis_client.rpush(f"call:{CallSid}", f"AI: {response_text}")
+        except Exception:
+            pass
 
         # Step 3 – Build TwiML response
         twiml.say(response_text, voice="alice")
@@ -308,7 +325,7 @@ async def handle_recording(
             max_length=15,
             timeout=2,
             finish_on_key="#",
-            action="/twilio/handle-recording",
+            action=f"{base_url}/twilio/handle-recording",
             method="POST",
             play_beep=True
         )

@@ -428,7 +428,7 @@ async def initiate_call(request: Request):
     
     try:
         # Get the ngrok URL from environment or use localhost
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
+        base_url = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
         
         # Check if using localhost and warn user
         if "localhost" in base_url or "127.0.0.1" in base_url:

@@ -1,5 +1,5 @@
 // Configuration
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = window.location.origin;
 let autoRefreshInterval = null;
 let isAutoRefresh = false;
 

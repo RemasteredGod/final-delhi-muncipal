@@ -51,11 +51,19 @@ async def transcribe(data: dict):
     Accepts an audio_url, downloads the audio file from Twilio (with auth),
     transcribes it using Whisper, and returns the text.
     """
-    audio_url = data["audio_url"]
+    audio_url = data.get("audio_url")
+
+    if not audio_url:
+        raise HTTPException(status_code=400, detail="audio_url is required")
 
     try:
         # Download audio from Twilio with authentication
         if "api.twilio.com" in audio_url:
+            if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Twilio credentials are missing in Whisper service"
+                )
             response = requests.get(
                 audio_url,
                 auth=HTTPBasicAuth(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN),
@@ -85,11 +93,14 @@ async def transcribe(data: dict):
         trimmed_path = tmp_path.replace(".mp3", "_trimmed.wav").replace(".wav", "_trimmed.wav")
         try:
             # Strip leading/trailing silence before transcribing
-            subprocess.run([
+            ffmpeg_result = subprocess.run([
                 "ffmpeg", "-y", "-i", tmp_path,
                 "-af", "silenceremove=start_periods=1:start_silence=0.3:start_threshold=-50dB",
                 trimmed_path
-            ], capture_output=True)
+            ], capture_output=True, text=True)
+
+            if ffmpeg_result.returncode != 0:
+                print(f"ffmpeg warning: {ffmpeg_result.stderr.strip()}")
             
             transcribe_path = trimmed_path if os.path.exists(trimmed_path) and os.path.getsize(trimmed_path) > 100 else tmp_path
 
@@ -116,10 +127,10 @@ async def transcribe(data: dict):
         return {"text": text}
         
     except Exception as e:
-        print(f"Transcription error: {str(e)}")
+        print(f"Transcription error: {repr(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Transcription failed: {str(e)}"
+            detail=f"Transcription failed: {repr(e)}"
         )
 
 

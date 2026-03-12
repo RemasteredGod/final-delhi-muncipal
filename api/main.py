@@ -244,8 +244,12 @@ async def handle_recording(
                 stt = await client.post(
                     f"{WHISPER_URL}/transcribe",
                     json={"audio_url": audio_url},
-                    timeout=httpx.Timeout(10.0)
+                    timeout=httpx.Timeout(60.0, connect=10.0)
                 )
+            if stt.status_code != 200:
+                error_detail = stt.text.strip() or f"HTTP {stt.status_code}"
+                raise RuntimeError(f"Whisper returned {stt.status_code}: {error_detail}")
+
             text = stt.json().get("text", "")
             
             if not text or text.strip() == "":
@@ -265,8 +269,12 @@ async def handle_recording(
                 return Response(content=str(twiml), media_type="application/xml")
                 
         except Exception as stt_error:
-            error_msg = f"STT Service Error: {str(stt_error)}"
-            redis_client.rpush(f"call:{CallSid}", f"System Error: {error_msg}")
+            error_msg = f"STT Service Error: {repr(stt_error)}"
+            try:
+                redis_client.rpush(f"call:{CallSid}", f"System Error: {error_msg}")
+            except Exception:
+                pass
+            print(error_msg)
             twiml.say(
                 "I am experiencing technical difficulties with speech recognition. "
                 "Please try again later or contact support.",
